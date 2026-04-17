@@ -1,0 +1,98 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openvino-genai-chat"
+version = "0.1.0"
+description = "A professional PyQt5-based chat interface for local OpenVINO model inference with real-time streaming, conversation persistence, and template support."
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "GitUser019203", email = "126734096+GitUser019203@users.noreply.github.com"}
+]
+keywords = ["openVINO", "PyQt5", "chat", "LLM", "inference"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: X11 Applications :: Qt",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "PyQt5>=5.15.0",
+    "openvino-genai>=0.2.0",
+    "huggingface-hub>=0.20.0",
+    "pydub>=0.25.1",
+    "numpy>=1.23.5",
+    "markdown>=3.4.0",
+    "click>=8.1.7",
+    "twine>=4.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "black>=23.0",
+    "flake8>=6.0",
+    "mypy>=1.0",
+]
+
+build = [
+    "build>=0.10.0",
+    "twine>=4.0.0",
+]
+
+[project.scripts]
+openvino-chat-cli = "openvino_genai_chat.entry_point:start_app"
+
+[project.gui-scripts]
+openvino-chat = "openvino_genai_chat.entry_point:start_app"
+
+[tool.setuptools]
+packages = ["openvino_genai_chat"]
+
+[tool.setuptools.package-data]
+openvino_genai_chat = ["py.typed"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "--strict-markers -v"
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
