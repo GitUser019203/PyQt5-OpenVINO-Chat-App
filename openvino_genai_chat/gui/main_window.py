@@ -442,12 +442,18 @@ class MainWindow(QMainWindow):
         self.update_status(f"❌ Generation error: {error[:40]}...")
     
     def cancel_generation(self) -> None:
-        """Cancel the current generation."""
+        """Cancel the current generation without blocking the UI thread."""
         if self.model:
             self.model.stop_generation()
         
-        if self.generation_worker:
-            self.generation_worker.wait()
+        if self.generation_worker and self.generation_worker.isRunning():
+            # Give the worker up to 3 seconds to honour the stop flag gracefully
+            finished = self.generation_worker.wait(3000)
+            if not finished:
+                # Last resort: force terminate (avoids UI freeze)
+                logger.warning("Generation worker did not stop in time – terminating forcefully")
+                self.generation_worker.terminate()
+                self.generation_worker.wait(1000)
         
         self.is_generating = False
         self.send_btn.setVisible(True)

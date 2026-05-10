@@ -239,13 +239,14 @@ class STTManager:
             logger.error(f"Failed to load Whisper model: {e}")
             return False
 
-    def transcribe(self, audio_path: Path, streamer_callback: Optional[Callable[[str], bool]] = None) -> str:
+    def transcribe(self, audio_path: Path, streamer_callback: Optional[Callable[[str], bool]] = None, **kwargs) -> str:
         """
         Transcribe an audio file.
         
         Args:
             audio_path: Path to the .mp3, .wav, .m4a, or .mp4 file
             streamer_callback: Optional callback for real-time text updates
+            **kwargs: Additional generation config options (e.g. language="<|es|>", task="translate")
             
         Returns:
             Transcribed text
@@ -263,7 +264,7 @@ class STTManager:
             streamer = STTStreamer(self.tokenizer, streamer_callback)
             
         # Perform transcription
-        result = self.pipeline.generate(audio_data, streamer=streamer)
+        result = self.pipeline.generate(audio_data, streamer=streamer, **kwargs)
         
         # Robust handling of different OpenVINO GenAI return types
         if isinstance(result, list):

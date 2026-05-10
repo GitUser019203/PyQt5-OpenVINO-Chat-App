@@ -47,8 +47,8 @@ def start_app():
     try:
         logger.info(f"Loading OpenVINO GenAI pipeline from {model_path}...")
         pipe = ov_genai.LLMPipeline(
-                    models_path=model_path.as_posix(),
-                    device=device.value,
+                   models_path=model_path.as_posix(),
+                   device=device.value,
                 )
         logger.info("✓ Pipeline initialized successfully")
     except Exception as e:

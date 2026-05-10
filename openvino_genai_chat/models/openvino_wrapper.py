@@ -42,6 +42,7 @@ class OpenVINOWrapper:
         self.max_new_tokens = max_new_tokens
         self.pipeline: Optional[ov_genai.LLMPipeline] = None
         self.chat_active = False
+        self._stop_flag = False
         
         if not dont_initialize_model:
             self._initialize_model()
@@ -100,6 +101,11 @@ class OpenVINOWrapper:
         self.pipeline.finish_chat()
         self.chat_active = False
         logger.debug("Chat session finished")
+
+    def stop_generation(self) -> None:
+        """Signal the streaming generation loop to stop after the current token."""
+        self._stop_flag = True
+        logger.debug("Stop generation flag set")
     
     def generate_streaming(
         self,
@@ -123,11 +129,14 @@ class OpenVINOWrapper:
         logger.debug(f"Generating response for prompt: {prompt[:100]}...")
         
         full_response = []
+        self._stop_flag = False  # Reset before each generation
         
         try:
             # Use the streamer callback pattern
             def streamer(subword: str) -> ov_genai.StreamingStatus:
                 """Stream callback for token generation."""
+                if self._stop_flag:
+                    return ov_genai.StreamingStatus.STOP
                 callback(subword)
                 full_response.append(subword)
                 return ov_genai.StreamingStatus.RUNNING

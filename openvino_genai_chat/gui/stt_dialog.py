@@ -51,7 +51,19 @@ class STTWorker(QThread):
                     
                     self.new_text.emit(str(text))
                     return False # False means don't stop
-                text = self.manager.transcribe(audio_path, streamer_callback=streamer_cb)
+                    
+                # Extract inference kwargs
+                inference_kwargs = {}
+                if self.kwargs.get("language"):
+                    inference_kwargs["language"] = self.kwargs["language"]
+                if self.kwargs.get("inference_task"):
+                    inference_kwargs["task"] = self.kwargs["inference_task"]
+                    
+                text = self.manager.transcribe(
+                    audio_path, 
+                    streamer_callback=streamer_cb,
+                    **inference_kwargs
+                )
                 self.finished.emit(text)
             elif self.task == "load":
                 model_path = self.kwargs.get("model_path")
@@ -134,6 +146,127 @@ class STTDialog(QDialog):
         self.browse_btn.clicked.connect(self.browse_audio)
         audio_file_layout.addWidget(self.browse_btn)
         audio_group.addLayout(audio_file_layout)
+        
+        # Language and Task options
+        options_layout = QHBoxLayout()
+        
+        options_layout.addWidget(QLabel("Language:"))
+        self.language_selector = QComboBox()
+        # All 99 languages supported by multilingual Whisper models (sorted alphabetically)
+        _languages = [
+            ("Auto Detect",      ""),
+            ("Afrikaans",        "<|af|>"),
+            ("Amharic",          "<|am|>"),
+            ("Arabic",           "<|ar|>"),
+            ("Assamese",         "<|as|>"),
+            ("Azerbaijani",      "<|az|>"),
+            ("Bashkir",          "<|ba|>"),
+            ("Basque",           "<|eu|>"),
+            ("Belarusian",       "<|be|>"),
+            ("Bengali",          "<|bn|>"),
+            ("Bosnian",          "<|bs|>"),
+            ("Breton",           "<|br|>"),
+            ("Bulgarian",        "<|bg|>"),
+            ("Cantonese",        "<|yue|>"),
+            ("Catalan",          "<|ca|>"),
+            ("Chinese",          "<|zh|>"),
+            ("Croatian",         "<|hr|>"),
+            ("Czech",            "<|cs|>"),
+            ("Danish",           "<|da|>"),
+            ("Dutch",            "<|nl|>"),
+            ("English",          "<|en|>"),
+            ("Estonian",         "<|et|>"),
+            ("Faroese",          "<|fo|>"),
+            ("Finnish",          "<|fi|>"),
+            ("French",           "<|fr|>"),
+            ("Galician",         "<|gl|>"),
+            ("Georgian",         "<|ka|>"),
+            ("German",           "<|de|>"),
+            ("Greek",            "<|el|>"),
+            ("Gujarati",         "<|gu|>"),
+            ("Haitian Creole",   "<|ht|>"),
+            ("Hausa",            "<|ha|>"),
+            ("Hawaiian",         "<|haw|>"),
+            ("Hebrew",           "<|he|>"),
+            ("Hindi",            "<|hi|>"),
+            ("Hungarian",        "<|hu|>"),
+            ("Armenian",         "<|hy|>"),
+            ("Icelandic",        "<|is|>"),
+            ("Indonesian",       "<|id|>"),
+            ("Italian",          "<|it|>"),
+            ("Japanese",         "<|ja|>"),
+            ("Javanese",         "<|jw|>"),
+            ("Kannada",          "<|kn|>"),
+            ("Kazakh",           "<|kk|>"),
+            ("Khmer",            "<|km|>"),
+            ("Korean",           "<|ko|>"),
+            ("Latin",            "<|la|>"),
+            ("Latvian",          "<|lv|>"),
+            ("Lingala",          "<|ln|>"),
+            ("Lithuanian",       "<|lt|>"),
+            ("Lao",              "<|lo|>"),
+            ("Luxembourgish",    "<|lb|>"),
+            ("Macedonian",       "<|mk|>"),
+            ("Malagasy",         "<|mg|>"),
+            ("Malay",            "<|ms|>"),
+            ("Malayalam",        "<|ml|>"),
+            ("Maltese",          "<|mt|>"),
+            ("Maori",            "<|mi|>"),
+            ("Marathi",          "<|mr|>"),
+            ("Mongolian",        "<|mn|>"),
+            ("Burmese",          "<|my|>"),
+            ("Nepali",           "<|ne|>"),
+            ("Norwegian",        "<|no|>"),
+            ("Norwegian Nynorsk","<|nn|>"),
+            ("Occitan",          "<|oc|>"),
+            ("Pashto",           "<|ps|>"),
+            ("Persian",          "<|fa|>"),
+            ("Polish",           "<|pl|>"),
+            ("Portuguese",       "<|pt|>"),
+            ("Punjabi",          "<|pa|>"),
+            ("Romanian",         "<|ro|>"),
+            ("Russian",          "<|ru|>"),
+            ("Sanskrit",         "<|sa|>"),
+            ("Serbian",          "<|sr|>"),
+            ("Shona",            "<|sn|>"),
+            ("Sindhi",           "<|sd|>"),
+            ("Sinhala",          "<|si|>"),
+            ("Slovak",           "<|sk|>"),
+            ("Slovenian",        "<|sl|>"),
+            ("Somali",           "<|so|>"),
+            ("Spanish",          "<|es|>"),
+            ("Albanian",         "<|sq|>"),
+            ("Sundanese",        "<|su|>"),
+            ("Swahili",          "<|sw|>"),
+            ("Swedish",          "<|sv|>"),
+            ("Tagalog",          "<|tl|>"),
+            ("Tajik",            "<|tg|>"),
+            ("Tamil",            "<|ta|>"),
+            ("Tatar",            "<|tt|>"),
+            ("Telugu",           "<|te|>"),
+            ("Thai",             "<|th|>"),
+            ("Tibetan",          "<|bo|>"),
+            ("Turkmen",          "<|tk|>"),
+            ("Turkish",          "<|tr|>"),
+            ("Ukrainian",        "<|uk|>"),
+            ("Urdu",             "<|ur|>"),
+            ("Uzbek",            "<|uz|>"),
+            ("Vietnamese",       "<|vi|>"),
+            ("Welsh",            "<|cy|>"),
+            ("Yiddish",          "<|yi|>"),
+            ("Yoruba",           "<|yo|>"),
+        ]
+        for name, token in _languages:
+            self.language_selector.addItem(name, token)
+        options_layout.addWidget(self.language_selector)
+        
+        options_layout.addWidget(QLabel("Task:"))
+        self.task_selector = QComboBox()
+        self.task_selector.addItem("Transcribe", "transcribe")
+        self.task_selector.addItem("Translate to English", "translate")
+        options_layout.addWidget(self.task_selector)
+        
+        audio_group.addLayout(options_layout)
         
         self.transcribe_btn = QPushButton("▶ Transcribe")
         self.transcribe_btn.setObjectName("primaryButton")
@@ -246,7 +379,16 @@ class STTDialog(QDialog):
         self.output_text.clear()
         self.output_text.setPlaceholderText("Transcribing... please wait.")
         
-        self.worker = STTWorker("transcribe", self.manager, audio_path=audio_path)
+        language_val = self.language_selector.currentData()
+        task_val = self.task_selector.currentData()
+        
+        self.worker = STTWorker(
+            "transcribe", 
+            self.manager, 
+            audio_path=audio_path,
+            language=language_val if language_val else None,
+            inference_task=task_val
+        )
         self.worker.new_text.connect(self.on_new_text)
         self.worker.finished.connect(self.on_transcription_finished)
         self.worker.error.connect(self.on_worker_error)
