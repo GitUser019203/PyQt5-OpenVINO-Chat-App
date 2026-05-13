@@ -27,9 +27,18 @@ if platform.system() == "Windows":
 logger = setup_logger(__name__)
 
 class TqdmProgress(tqdm):
-    """Wrapper for tqdm to report progress via callback."""
+    """Wrapper for tqdm to report progress via callback.
+
+    Safely redirects tqdm output to a null sink when sys.stdout is None,
+    which happens when the app is launched as a windowless GUI process
+    (e.g. via the openvino-chat entry point on Windows).
+    """
     def __init__(self, *args, **kwargs):
         self._callback = kwargs.pop("progress_callback", None)
+        # When running as a GUI app sys.stdout may be None; tqdm would crash
+        # trying to write to it. Redirect to a null sink in that case.
+        if sys.stdout is None:
+            kwargs.setdefault("file", io.StringIO())
         super().__init__(*args, **kwargs)
 
     def update(self, n=1):
