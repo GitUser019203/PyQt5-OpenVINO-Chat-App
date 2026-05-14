@@ -199,6 +199,17 @@ def get_dark_stylesheet() -> str:
         width: 20px;
     }
     
+    QComboBox::down-arrow {
+        image: none;
+        border-top: 5px solid #0d7377;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        margin-top: 2px;
+        margin-right: 5px;
+        width: 0px;
+        height: 0px;
+    }
+    
     QComboBox QAbstractItemView {
         background-color: #2d2d2d;
         color: #ffffff;
@@ -395,6 +406,22 @@ def get_light_stylesheet() -> str:
         border: 1px solid #cccccc;
         border-radius: 4px;
         padding: 4px 8px;
+    }
+    
+    QComboBox::drop-down {
+        border: none;
+        width: 20px;
+    }
+
+    QComboBox::down-arrow {
+        image: none;
+        border-top: 5px solid #0d7377;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        margin-top: 2px;
+        margin-right: 5px;
+        width: 0px;
+        height: 0px;
     }
     
     QComboBox QAbstractItemView {
