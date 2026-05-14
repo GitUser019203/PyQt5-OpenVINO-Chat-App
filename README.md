@@ -4,21 +4,24 @@ A professional PyQt5-based chat interface for local OpenVINO model inference wit
 
 ## Features
 
-- **Real-time Streaming**: Watch model responses appear character-by-character as they're generated
+- **Real-time Streaming**: Watch model responses appear character-by-character as they're generated.
 - **Speech-to-Text (STT)**:
-  - Transcribe audio/video files (`.mp3`, `.m4a`, `.mp4`, `.wav`) using OpenVINO Whisper models
-  - Real-time transcription streaming (watch words appear as they are processed)
-  - Automatic model downloading and verification from Hugging Face
-- **Conversation Persistence**: Automatically save all conversations to disk and revisit them anytime
-- **Template System**: Support for user-defined custom templates to streamline repetitive prompts
-- **Model Configuration**: 
-  - Easy-to-use dialog for model path, device selection (CPU/GPU), and token limits
-  - Download new OpenVINO GenAI models directly from Hugging Face
-  - Automatic application shutdown to load newly downloaded models
-- **Extended Thinking Mode**: Toggle `/think` mode for slower but more reasoning-intensive responses
-- **Markdown Support**: Full markdown rendering for both prompts and responses
-- **Copy to Clipboard**: Easily copy assistant responses
-- **Modern Dark/Light Theme**: Professional, responsive UI with theme support
+  - **Universal Language Support**: Transcribe audio in all **99 languages** supported by multilingual Whisper models.
+  - **Auto-Detection & Translation**: Automatically detect the input language or translate foreign audio directly into English.
+  - **Broad Format Support**: Process `.mp3`, `.m4a`, `.mp4`, `.wav`, and more via FFmpeg integration.
+  - **Live Progress**: Watch words appear in real-time as the audio is processed.
+- **Enhanced Model Management**:
+  - **Live Download Logs**: View a real-time log stream from Hugging Face during model downloads, providing detailed file-by-file progress and speeds.
+  - **Robust Generation Control**: Instantly cancel text generation with a dedicated button and configurable safety timeouts to prevent UI freezes.
+- **Conversation Persistence**: Automatically save all conversations to disk and revisit them anytime with a searchable sidebar.
+- **Template System**: Streamline repetitive workflows with user-defined custom templates and field validation.
+- **Modern UI/UX**:
+  - **Think/No-Think Toggle**: Switch between reasoning-intensive (`/think`) and standard (`/no_think`) modes with a single click.
+  - **High-Contrast Design**: Professional dark/light themes with improved visibility for all interactive elements.
+  - **Markdown & Code**: Full markdown rendering with support for code blocks, tables, and lists.
+- **Stability & Performance**:
+  - **Windowless GUI Support**: Fully optimized for launching as a background/windowless process without terminal crashes.
+  - **Asynchronous Architecture**: All heavy operations (inference, STT, downloads) run in background threads to keep the UI perfectly responsive.
 
 ## Why Local PyQt5? (Security & Privacy)
 
@@ -26,15 +29,15 @@ While web-based alternatives like Streamlit or OpenWebUI are popular, this nativ
 
 - **Zero Network Exposure**: Unlike web-based interfaces that open local ports (`localhost:8501`, etc.), this application has no listening network-bound ports. Since it is a self-contained process, it is immune to unauthorized local network access or Cross-Site Request Forgery (CSRF).
 - **Reduced Attack Surface**: By avoiding browser engines, we eliminate entire categories of common web vulnerabilities such as Cross-Site Scripting (XSS), insecure cookie management, and data interception via malicious browser extensions.
-- **Process Isolation**: The OpenVINO inference engine runs within the application's own memory space. There is no need for a separate Model Server (like OpenVINO Model Server) which would require an open gRPC/REST API port.
-- **Data Sovereignty**: Your conversations and settings never leave your machine. The app does not rely on external database servers, cloud backends, or third-party CDNs for its runtime operations.
+- **Process Isolation**: The OpenVINO inference engine runs within the application's own memory space. There is no need for a separate Model Server which would require an open gRPC/REST API port.
+- **Data Sovereignty**: Your conversations and settings never leave your machine. The app does not rely on external database servers, cloud backends, or third-party CDNs.
 
 ## Youtube Video
 Demo video link : ([https://www.youtube.com/watch?v=ldvx83SdIkY](https://www.youtube.com/watch?v=ldvx83SdIkY))
 
 ## Getting Started
 
-On your first launch, the application will automatically download the **Phi-3.5-mini-instruct-int4-ov** model from Hugging Face (~2GB) if no other model is configured. This ensures a seamless "out-of-the-box" experience. Please ensure you have an active internet connection for this initial setup.
+On your first launch, the application will automatically download the **Phi-3.5-mini-instruct-int4-ov** model from Hugging Face (~2GB) if no other model is configured. Please ensure you have an active internet connection for this initial setup.
 
 ## Requirements
 
@@ -47,108 +50,59 @@ On your first launch, the application will automatically download the **Phi-3.5-
 ## Installation
 
 ### From PyPI (when available)
-
 ```bash
 pip install openvino-genai-chat
 openvino-chat
 ```
 
-### From Wheel File
-
-```bash
-pip install dist/openvino_genai_chat-0.1.0-py3-none-any.whl
-openvino-chat
-```
-
 ### From Source
-
-1. Clone the repository:
+1. Clone the repository and navigate to it:
 ```bash
 git clone https://github.com/yourusername/pyqt5-openvino-chat-app.git
 cd pyqt5-openvino-chat-app
 ```
 
-2. Create a virtual environment:
+2. Setup virtual environment and install:
 ```bash
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
+# On Windows: venv\Scripts\activate
+# On Linux/macOS: source venv/bin/activate
 
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-4. Run the application:
-```bash
-python -m openvino_genai_chat
-```
-
-Or install as a package and use the entry point:
-```bash
 pip install -e .
 openvino-chat
 ```
 
 ### Install FFmpeg (Windows)
-For Speech-to-Text to support compressed formats, install FFmpeg using winget:
+For Speech-to-Text to support compressed formats:
 ```powershell
 winget install "FFmpeg (Essentials Build)"
-```
-
-## Building a Wheel
-
-To build a .whl distribution file:
-
-```bash
-pip install build
-python -m build
-```
-
-The built wheel will be in the `dist/` directory:
-```bash
-pipx install dist/openvino_genai_chat-0.1.0-py3-none-any.whl
 ```
 
 ## Usage
 
 1. **Configure the Model**:
-   - Click "⚙ Config" button
-   - Select your OpenVINO model directory
-   - Choose CPU or GPU device
-   - Set token generation limits
-   - Toggle extended thinking mode if desired
+   - Click "⚙ Config" to set model path, device (CPU/GPU), and token limits.
+   - Adjust the **Cancel Wait (ms)** setting if you encounter freezes on slow hardware.
 
-2. **Create a New Conversation**:
-   - Click "+ New Chat" in the sidebar
-   - Or press Ctrl+N
+2. **Download Models**:
+   - Enter a Hugging Face Repo ID in the Config dialog.
+   - Watch the **Live Log Stream** for detailed download progress.
 
-3. **Send Messages**:
-   - Type your message in the input area
-   - Press Enter to send, or Shift+Enter for new line
-   - Watch the response stream in real-time
+3. **Inference Modes**:
+   - Toggle the **/think** button to enable reasoning-intensive generation.
+   - Use the sidebar to search or load previous conversations.
 
-4. **Use Templates**:
-   - Click "📋 Templates" to open template dialog
-   - Create or select a custom template
-   - Fill in the required fields
-   - Click "Apply Template" to populate the chat input
+4. **Speech-to-Text**:
+   - Click "🎙 STT" and select an audio/video file.
+   - Choose from all **99 supported languages** or use "Auto Detect".
+   - Select "Translate to English" if you need translation for foreign audio.
+   - Click "▶ Transcribe" and watch the streaming results.
 
-5. **Manage Conversations**:
-   - Click on any conversation in the sidebar to load it
-   - Right-click to rename or delete
-   - Search conversations using the search box
-
-6. **Speech-to-Text**:
-   - Click "🎙 STT" in the main toolbar
-   - Select an STT model (e.g., `OpenVINO/whisper-base-int8-ov`)
-   - Click "Download / Load" to prepare the model
-   - Browse for an audio or video file
-   - Click "▶ Transcribe" to start processing
-   - Watch text appear in real-time
-
-7. **Copy Responses**:
-   - Click "📋 Copy Last Response" to copy assistant's message
+5. **Keyboard Shortcuts**:
+   - `Ctrl+N`: New Chat
+   - `Enter`: Send Message
+   - `Shift+Enter`: New Line in input box
+   - `Ctrl+C`: Copy selected text
 
 ## Architecture
 
