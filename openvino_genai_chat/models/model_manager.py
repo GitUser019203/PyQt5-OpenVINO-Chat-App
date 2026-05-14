@@ -22,6 +22,7 @@ class TqdmProgress(tqdm):
     """
     def __init__(self, *args, **kwargs):
         self._callback = kwargs.pop("progress_callback", None)
+        self._log_callback = kwargs.pop("log_callback", None)
         # When running as a GUI app sys.stdout may be None; tqdm would crash
         # trying to write to it. Redirect to a null sink in that case.
         if sys.stdout is None:
@@ -33,6 +34,8 @@ class TqdmProgress(tqdm):
         if self._callback and self.total:
             progress = int((self.n / self.total) * 100)
             self._callback(progress)
+        if self._log_callback:
+            self._log_callback(str(self))
 
     def close(self):
         if self._callback:
@@ -134,7 +137,7 @@ class ModelManager:
         """Get initialization error if any."""
         return self.error
 
-    def download_model(self, repo_id: str, target_dir: Path, progress_callback: Optional[Callable[[int], None]] = None) -> Path:
+    def download_model(self, repo_id: str, target_dir: Path, progress_callback: Optional[Callable[[int], None]] = None, log_callback: Optional[Callable[[str], None]] = None) -> Path:
         """
         Download a model from Hugging Face or return local path if already exists.
 
@@ -159,7 +162,12 @@ class ModelManager:
         # Use a dynamic class to pass the callback while remaining a valid tqdm class
         class ProgressHandler(TqdmProgress):
             def __init__(self, *args, **kwargs):
-                super().__init__(*args, progress_callback=progress_callback, **kwargs)
+                super().__init__(
+                    *args,
+                    progress_callback=progress_callback,
+                    log_callback=log_callback,
+                    **kwargs
+                )
 
         model_path = snapshot_download(
             repo_id=repo_id,

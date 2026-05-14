@@ -3,7 +3,7 @@
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
     QSlider, QComboBox, QFileDialog, QSpinBox, QGroupBox, QMessageBox,
-    QProgressBar
+    QProgressBar, QTextEdit
 )
 from PyQt5.QtCore import Qt, pyqtSignal, QThread
 from pathlib import Path
@@ -20,6 +20,7 @@ class DownloadWorker(QThread):
     finished = pyqtSignal(Path)
     error = pyqtSignal(str)
     progress = pyqtSignal(int)
+    log_message = pyqtSignal(str)
     
     def __init__(self, repo_id: str, target_dir: Path):
         super().__init__()
@@ -32,10 +33,14 @@ class DownloadWorker(QThread):
             def progress_cb(p):
                 self.progress.emit(p)
                 
+            def log_cb(msg):
+                self.log_message.emit(msg)
+                
             model_path = manager.download_model(
                 self.repo_id, 
                 self.target_dir, 
-                progress_callback=progress_cb
+                progress_callback=progress_cb,
+                log_callback=log_cb
             )
             self.finished.emit(model_path)
         except Exception as e:
@@ -117,9 +122,13 @@ class ConfigDialog(QDialog):
         download_h_layout.addWidget(self.download_btn)
         download_v_layout.addLayout(download_h_layout)
         
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setVisible(False)
-        download_v_layout.addWidget(self.progress_bar)
+        self.log_output = QTextEdit()
+        self.log_output.setReadOnly(True)
+        self.log_output.setPlaceholderText("Download logs will appear here...")
+        self.log_output.setMaximumHeight(100)
+        self.log_output.setVisible(False)
+        self.log_output.setStyleSheet("font-family: monospace; font-size: 10px; background-color: #1e1e1e; color: #d4d4d4;")
+        download_v_layout.addWidget(self.log_output)
         
         self.status_label = QLabel("Models will be downloaded to standard local directory.")
         self.status_label.setStyleSheet("color: #888888; font-size: 10px;")
@@ -289,24 +298,45 @@ class ConfigDialog(QDialog):
 
         self.repo_id_input.setEnabled(False)
         self.download_btn.setEnabled(False)
-        self.progress_bar.setVisible(True)
-        self.progress_bar.setValue(0)
+        self.log_output.setVisible(True)
+        self.log_output.clear()
         self.status_label.setText(f"Downloading {repo_id}...")
         self.status_label.setStyleSheet("color: #888888; font-size: 10px;")
 
         self.worker = DownloadWorker(repo_id, target_dir)
         self.worker.progress.connect(self.on_progress)
+        self.worker.log_message.connect(self.on_log_message)
         self.worker.finished.connect(self.on_finished)
         self.worker.error.connect(self.on_error)
         self.worker.start()
 
     def on_progress(self, value):
-        """Update progress bar."""
-        self.progress_bar.setValue(value)
+        """Update progress."""
+        pass  # We use log output now, but kept for compatibility
+
+    def on_log_message(self, message):
+        """Update log output."""
+        # Clean up the carriage returns from tqdm
+        clean_msg = message.replace('\r', '').strip()
+        if clean_msg:
+            # For tqdm, we often want to overwrite the last line if it's the same bar
+            # but in a QTextEdit append is safer. Let's do a simple overwrite logic:
+            cursor = self.log_output.textCursor()
+            cursor.movePosition(cursor.End)
+            self.log_output.setTextCursor(cursor)
+            
+            # Simple heuristic: if it looks like a progress bar, replace the last line
+            if '%' in clean_msg and '[' in clean_msg and ']' in clean_msg:
+                self.log_output.undo() # This is a bit hacky, let's just append for now
+                self.log_output.append(clean_msg)
+            else:
+                self.log_output.append(clean_msg)
+            
+            # Auto-scroll
+            self.log_output.ensureCursorVisible()
 
     def on_finished(self, model_path: Path):
         """Handle download completion."""
-        self.progress_bar.setVisible(False)
         self.status_label.setText(f"✓ Download complete: {model_path}")
         self.status_label.setStyleSheet("color: #00ff00; font-size: 10px;")
         self.model_path_input.setText(str(model_path))
@@ -318,7 +348,6 @@ class ConfigDialog(QDialog):
         """Handle download error."""
         self.repo_id_input.setEnabled(True)
         self.download_btn.setEnabled(True)
-        self.progress_bar.setVisible(False)
         self.status_label.setText(f"❌ Error: {message}")
         self.status_label.setStyleSheet("color: #ff0000; font-size: 10px;")
         QMessageBox.critical(self, "Download Error", f"Failed to download model: {message}")
