@@ -47,13 +47,14 @@ class ConfigDialog(QDialog):
     """Dialog for configuring model inference settings."""
     
     # Signal emitted when settings are applied
-    settings_applied = pyqtSignal(str, str, int, bool)  # model_path, device, max_tokens, use_thinking
+    settings_applied = pyqtSignal(str, str, int, bool, int)  # model_path, device, max_tokens, use_thinking, cancel_wait_ms
     
     def __init__(self, 
                  current_model_path: str,
                  current_device: str,
                  current_max_tokens: int,
                  current_use_thinking: bool,
+                 current_cancel_wait_ms: int = 5000,
                  parent=None):
         """
         Initialize configuration dialog.
@@ -73,6 +74,7 @@ class ConfigDialog(QDialog):
         self.current_device = current_device
         self.current_max_tokens = current_max_tokens
         self.current_use_thinking = current_use_thinking
+        self.current_cancel_wait_ms = current_cancel_wait_ms
         self.worker = None
         
         self.setup_ui()
@@ -165,6 +167,23 @@ class ConfigDialog(QDialog):
         self.tokens_slider.sliderMoved.connect(self._update_tokens_from_slider)
         tokens_layout.addWidget(self.tokens_slider)
         
+        # Cancel wait time
+        cancel_h_layout = QHBoxLayout()
+        cancel_h_layout.addWidget(QLabel("Cancel Wait (ms):"))
+        self.cancel_wait_spin = QSpinBox()
+        self.cancel_wait_spin.setMinimum(500)
+        self.cancel_wait_spin.setMaximum(1000000)
+        self.cancel_wait_spin.setSingleStep(500)
+        self.cancel_wait_spin.setValue(5000)
+        self.cancel_wait_spin.setToolTip(
+            "How long to wait for the generation worker to stop gracefully\n"
+            "before forcefully terminating it. Increase if you see\n"
+            "'terminating forcefully' warnings in the logs."
+        )
+        cancel_h_layout.addWidget(self.cancel_wait_spin)
+        cancel_h_layout.addStretch()
+        tokens_layout.addLayout(cancel_h_layout)
+        
         tokens_group.setLayout(tokens_layout)
         layout.addWidget(tokens_group)
         
@@ -202,6 +221,7 @@ class ConfigDialog(QDialog):
         self.device_combo.setCurrentText(self.current_device)
         self.max_tokens_spin.setValue(self.current_max_tokens)
         self.tokens_slider.setValue(self.current_max_tokens)
+        self.cancel_wait_spin.setValue(self.current_cancel_wait_ms)
         
         if self.current_use_thinking:
             self.thinking_combo.setCurrentIndex(1)
@@ -231,6 +251,7 @@ class ConfigDialog(QDialog):
         device = self.device_combo.currentText()
         max_tokens = self.max_tokens_spin.value()
         use_thinking = self.thinking_combo.currentIndex() == 1
+        cancel_wait_ms = self.cancel_wait_spin.value()
         
         # Validate model path
         if not model_path:
@@ -249,8 +270,8 @@ class ConfigDialog(QDialog):
             )
             return
         
-        logger.info(f"Applying config: model={model_path}, device={device}, tokens={max_tokens}")
-        self.settings_applied.emit(model_path, device, max_tokens, use_thinking)
+        logger.info(f"Applying config: model={model_path}, device={device}, tokens={max_tokens}, cancel_wait_ms={cancel_wait_ms}")
+        self.settings_applied.emit(model_path, device, max_tokens, use_thinking, cancel_wait_ms)
         self.accept()
 
     def start_download(self):

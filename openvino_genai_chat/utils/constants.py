@@ -30,6 +30,7 @@ DEFAULT_CONFIG = {
     "theme": "dark",
     "auto_save_interval": 5,  # seconds
     "use_thinking": False,  # /no_think by default, set True for /think
+    "cancel_wait_ms": 5000,  # ms to wait for generation worker before force-terminating
 }
 
 # Model inference limits

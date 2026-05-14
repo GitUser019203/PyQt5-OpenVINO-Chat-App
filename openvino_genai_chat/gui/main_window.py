@@ -109,6 +109,7 @@ class MainWindow(QMainWindow):
                 use_thinking = self.settings_manager.get_use_thinking()
                 self.chat_manager.use_thinking = use_thinking
                 self.thinking_btn.setChecked(use_thinking)
+                self.toggle_thinking_mode()  # sync button text with checked state
                 self.update_status("✓ Ready - Model loaded")
                 
                 try:
@@ -447,8 +448,9 @@ class MainWindow(QMainWindow):
             self.model.stop_generation()
         
         if self.generation_worker and self.generation_worker.isRunning():
-            # Give the worker up to 3 seconds to honour the stop flag gracefully
-            finished = self.generation_worker.wait(3000)
+            # Give the worker the configured time to honour the stop flag gracefully
+            cancel_wait_ms = self.settings_manager.get("cancel_wait_ms", 3000)
+            finished = self.generation_worker.wait(cancel_wait_ms)
             if not finished:
                 # Last resort: force terminate (avoids UI freeze)
                 logger.warning("Generation worker did not stop in time – terminating forcefully")
@@ -485,19 +487,21 @@ class MainWindow(QMainWindow):
             current_device=self.settings_manager.get_device().value,
             current_max_tokens=self.settings_manager.get_max_tokens(),
             current_use_thinking=self.chat_manager.use_thinking,
+            current_cancel_wait_ms=self.settings_manager.get("cancel_wait_ms", 5000),
             parent=self,
         )
         
         dialog.settings_applied.connect(self.on_config_applied)
         dialog.exec_()  # Modal dialog
     
-    def on_config_applied(self, model_path: str, device: str, max_tokens: int, use_thinking: bool) -> None:
+    def on_config_applied(self, model_path: str, device: str, max_tokens: int, use_thinking: bool, cancel_wait_ms: int) -> None:
         """Handle configuration changes."""
         try:
             # Update settings
             self.settings_manager.set("model_path", model_path)
             self.settings_manager.set("device", device)
             self.settings_manager.set("max_new_tokens", max_tokens)
+            self.settings_manager.set("cancel_wait_ms", cancel_wait_ms)
             self.settings_manager.set_use_thinking(use_thinking)
             
             self.update_status("Settings saved. Shutdown required to apply new model.")
